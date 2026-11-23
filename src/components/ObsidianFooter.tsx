@@ -1,4 +1,5 @@
 import { FormEvent, useState } from "react";
+import { subscribeNewsletter } from "../lib/api";
 
 const COMPASS_STAR_PATH =
   "M32 0 L36.5 23.5 L64 32 L36.5 40.5 L32 64 L27.5 40.5 L0 32 L27.5 23.5 Z M32 14 L45 19 L37 32 L45 45 L32 39 L19 45 L27 32 L19 19 Z";
@@ -7,8 +8,11 @@ export function ObsidianFooter() {
   const [email, setEmail] = useState("");
   const [joined, setJoined] = useState(false);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    const trimmed = email.trim();
+    if (!trimmed) return;
+    await subscribeNewsletter(trimmed);
     setJoined(true);
     setEmail("");
   };
@@ -26,12 +30,12 @@ export function ObsidianFooter() {
               marginBottom: "8px",
             }}
           >
-            DROP THE SHOP · ONE NINETY, NEW CAIRO // CAIRO ROOFTOPS
+            DROP THE SHOP · GIZA ARCHIVE // GIZA ROOFTOPS
           </div>
           <h2>
-            FROM CAIRO STREETS TO THE WORLD.
-            <br />
             GIZA TOLERATES NO WEAKNESS.
+            <br />
+            FROM GIZA STREETS TO THE WORLD.
           </h2>
         </div>
         <svg
@@ -55,7 +59,7 @@ export function ObsidianFooter() {
               lineHeight: 1.6,
             }}
           >
-            Subscribe for private password drops, New Cairo pop-up coordinates,
+            Subscribe for private password drops, Giza pop-up coordinates,
             and 10% off orders over 2,999 EGP.
           </p>
           <form className="newsletter-box" onSubmit={handleSubmit}>
@@ -76,7 +80,7 @@ export function ObsidianFooter() {
             <li>Delivery 2–5 Working Days (Egypt &amp; Worldwide)</li>
             <li>Cash on Delivery &amp; Prepaid Free Shipping</li>
             <li>Easy Exchange &amp; Returns Within 24 Hours</li>
-            <li>Drop The Shop — One Ninety, New Cairo</li>
+            <li>Drop The Shop — Giza Underground Archive</li>
           </ul>
         </div>
 
@@ -90,7 +94,7 @@ export function ObsidianFooter() {
               <a href="#archive-grid">FULL 20-PIECE STUDIO ARCHIVE ↗</a>
             </li>
             <li>
-              <a href="#how-to-style">CAIRO STREET ROTATION LOOKBOOK ↗</a>
+              <a href="#how-to-style">GIZA STREET ROTATION LOOKBOOK ↗</a>
             </li>
           </ul>
         </div>
@@ -105,7 +109,7 @@ export function ObsidianFooter() {
             color: "rgba(255,255,255,0.45)",
           }}
         >
-          © 2026 SAINTV STUDIOS · SAINTV × ATELIER · BUILT FOR CAIRO
+          © 2026 SAINTV STUDIOS · SAINTV × ATELIER · BUILT FOR GIZA
         </div>
       </div>
     </footer>

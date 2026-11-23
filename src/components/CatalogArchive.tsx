@@ -39,10 +39,10 @@ export function CatalogArchive({
     { value: "all", label: `ALL ARCHIVE (${products.length})` },
     { value: LINE_A, label: `${LINE_A} (${lineACount})` },
     { value: LINE_B, label: `${LINE_B} (${lineBCount})` },
-    { value: "JACKETS", label: "OUTERWEAR & LEATHER" },
-    { value: "TOPS", label: "HOODIES & KNITS" },
-    { value: "BOTTOMS", label: "BARREL DENIM" },
-    { value: "ACCESSORIES", label: "ACCESSORIES" },
+    { value: "KNITWEAR", label: "KNITWEAR" },
+    { value: "TOPS", label: "FLEECE & TEES" },
+    { value: "BOTTOMS", label: "DENIM & CORDUROY" },
+    { value: "SETS", label: "STUDIO SETS" },
   ];
 
   const filteredProducts = useMemo(() => {
@@ -156,15 +156,7 @@ export function CatalogArchive({
                 className="quick-size-bar mono"
                 onClick={(e) => e.stopPropagation()}
               >
-                <span
-                  style={{
-                    fontSize: "9px",
-                    fontWeight: 700,
-                    paddingRight: "4px",
-                  }}
-                >
-                  + BAG:
-                </span>
+                <span className="quick-size-label">+ BAG:</span>
                 {item.availableSizes.map((sz) => (
                   <button
                     key={sz}

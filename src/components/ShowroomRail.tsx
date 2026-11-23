@@ -22,10 +22,10 @@ type RailFilter = "ALL" | GarmentCategory;
 
 const FILTER_OPTIONS: { value: RailFilter; label: string }[] = [
   { value: "ALL", label: "All Pieces" },
-  { value: "JACKETS", label: "Jackets" },
+  { value: "KNITWEAR", label: "Knitwear" },
   { value: "TOPS", label: "Tops" },
   { value: "BOTTOMS", label: "Bottoms" },
-  { value: "ACCESSORIES", label: "Accessories" },
+  { value: "SETS", label: "Studio Sets" },
 ];
 
 export function ShowroomRail({
@@ -125,9 +125,19 @@ export function ShowroomRail({
     const count = visibleProducts.length;
     const isMobile = stageWidth < 640;
     const isTablet = stageWidth >= 640 && stageWidth < 1024;
-    const isWide = stageWidth >= 1500;
-    const openWidth = isMobile ? 216 : isTablet ? 244 : isWide ? 286 : 268;
-    const horizontalInset = isMobile ? 26 : 44;
+    const isWide = stageWidth >= 1360;
+    const openWidth = isMobile
+      ? Math.max(148, Math.min(196, Math.round(stageWidth * 0.48)))
+      : isTablet
+      ? Math.min(236, Math.round(stageWidth * 0.34))
+      : isWide
+      ? 266
+      : 244;
+    const horizontalInset = isMobile
+      ? Math.max(24, Math.ceil(openWidth * 0.18))
+      : isTablet
+      ? 36
+      : 48;
     const usableWidth = Math.max(openWidth, stageWidth - horizontalInset * 2);
 
     if (count <= 1) {
@@ -138,14 +148,18 @@ export function ShowroomRail({
       };
     }
 
-    const partGap = isMobile ? 16 : isWide ? 36 : 28;
-    const maxStep = isMobile ? 76 : isTablet ? 104 : isWide ? 210 : 126;
-    const minStep = isMobile ? 28 : 82;
-    const idealStep = (usableWidth - openWidth - partGap * 2) / (count - 1);
+    const partGap = isMobile ? 8 : isWide ? 30 : 22;
+    const maxStep = isMobile ? 46 : isTablet ? 90 : isWide ? 164 : 114;
+    const minStep = isMobile ? 8 : 52;
+    const availableForClosed = Math.max(
+      minStep * (count - 1),
+      usableWidth - openWidth - partGap * 2
+    );
+    const idealStep = availableForClosed / (count - 1);
     const closedStep = Math.max(minStep, Math.min(maxStep, idealStep));
 
     const totalSpan = openWidth + partGap * 2 + (count - 1) * closedStep;
-    const startX = (stageWidth - totalSpan) / 2;
+    const startX = Math.max(horizontalInset, (stageWidth - totalSpan) / 2);
 
     const positions: number[] = [];
     let cursorX = startX;
@@ -217,13 +231,17 @@ export function ShowroomRail({
 
   if (!activeProduct) return null;
 
-  const clampedCaptionX = Math.max(
-    Math.min(stageWidth / 2, 230),
-    Math.min(
-      stageWidth - Math.min(stageWidth / 2, 230),
-      railLayout.activeCenterX
-    )
-  );
+  const clampedCaptionX =
+    stageWidth < 580
+      ? stageWidth / 2
+      : Math.max(
+          Math.min(stageWidth / 2, 230),
+          Math.min(
+            stageWidth - Math.min(stageWidth / 2, 230),
+            railLayout.activeCenterX
+          )
+        );
+  const hangerSvgWidth = railLayout.openWidth < 190 ? 114 : 148;
 
   return (
     <section id="showroom" className="sr-section">
@@ -242,7 +260,7 @@ export function ShowroomRail({
               Interactive 3D Showroom Rack · Glide cursor across hangers or use
               arrow keys
             </p>
-            <h2 className="sr-heading">The Cairo Underground Rail</h2>
+            <h2 className="sr-heading">The Giza Underground Rail</h2>
           </div>
 
           <div className="sr-controls">
@@ -361,7 +379,7 @@ export function ShowroomRail({
                 >
                   <div className="sr-hook-wrap">
                     <svg
-                      width="148"
+                      width={hangerSvgWidth}
                       height="36"
                       viewBox="0 0 148 36"
                       fill="none"

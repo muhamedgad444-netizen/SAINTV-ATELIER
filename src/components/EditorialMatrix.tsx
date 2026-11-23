@@ -13,27 +13,27 @@ const MATRIX_TILES: {
   cta: string;
 }[] = [
   {
-    category: "JACKETS",
-    img: "/assets/products/washed-stand-collar-leather-jacket-front.webp",
-    alt: "Heavy Outerwear",
+    category: "KNITWEAR",
+    img: "/images/padded_collar_bomber_jacket_1795380644376.jpg",
+    alt: "Heavyweight Ribbed Knitwear",
     tag: "SAINTV × ATELIER // 01",
-    title: "RAW LEATHER & WORK JACKETS",
-    cta: "FILTER OUTERWEAR →",
+    title: "CHUNKY RIBBED KNITWEAR",
+    cta: "FILTER KNITWEAR →",
   },
   {
     category: "BOTTOMS",
     img: "/assets/products/washed-black-barrel-jeans-front.webp",
-    alt: "Barrel Denim",
+    alt: "Washed Barrel Denim and Corduroy",
     tag: "SAINTV // 02",
-    title: "WASHED BARREL CURVED DENIM",
-    cta: "FILTER DENIM →",
+    title: "BARREL DENIM & CORDUROY",
+    cta: "FILTER BOTTOMS →",
   },
   {
     category: "TOPS",
     img: "/assets/products/heavyweight-black-pullover-hoodie-front.webp",
-    alt: "Heavyweight Hoodies",
+    alt: "Heavyweight Fleece and Boxy Tees",
     tag: "ATELIER // 03",
-    title: "HEAVYWEIGHT HOODIES & KNITS",
+    title: "HEAVYWEIGHT FLEECE & TEES",
     cta: "FILTER TOPS →",
   },
 ];
@@ -51,7 +51,7 @@ export function EditorialMatrix({ onJumpCategory }: EditorialMatrixProps) {
             color: "var(--muted)",
           }}
         >
-          CAIRO × NEW CAIRO
+          GIZA // EGYPT
         </span>
       </div>
 

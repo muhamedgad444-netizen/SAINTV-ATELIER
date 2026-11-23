@@ -40,7 +40,7 @@ export function AnnouncementBars() {
         >
           ‹
         </button>
-        <span>{PROMOS[promoIdx]}</span>
+        <span className="promo-text">{PROMOS[promoIdx]}</span>
         <a href="#archive-grid" className="promo-pill-cta">
           SHOP NOW
         </a>

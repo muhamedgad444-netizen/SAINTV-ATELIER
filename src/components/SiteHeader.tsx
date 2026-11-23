@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Menu, Search, X } from "lucide-react";
 import { ArchiveFilter, LINE_A, LINE_B } from "../data/catalog";
 
 interface SiteHeaderProps {
@@ -26,6 +27,7 @@ export function SiteHeader({
   onOpenCart,
 }: SiteHeaderProps) {
   const [searchOpen, setSearchOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -34,9 +36,39 @@ export function SiteHeader({
     }
   }, [searchOpen]);
 
+  useEffect(() => {
+    if (!mobileMenuOpen && !searchOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMobileMenuOpen(false);
+        setSearchOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [mobileMenuOpen, searchOpen]);
+
+  const handleMobileSelect = (filter?: ArchiveFilter) => {
+    if (filter) onSelectFilter(filter);
+    setMobileMenuOpen(false);
+  };
+
   return (
     <header className="site-header">
       <div className="header-inner">
+        <button
+          type="button"
+          className="mobile-menu-btn"
+          aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+          aria-expanded={mobileMenuOpen}
+          onClick={() => {
+            setMobileMenuOpen((prev) => !prev);
+            setSearchOpen(false);
+          }}
+        >
+          {mobileMenuOpen ? <X size={18} aria-hidden="true" /> : <Menu size={18} aria-hidden="true" />}
+        </button>
+
         <nav className="nav-left" aria-label="Primary">
           <a
             href="#archive-grid"
@@ -81,13 +113,19 @@ export function SiteHeader({
         </a>
 
         <div className="nav-right">
-          <span className="currency-tag mono">CAIRO · EGP ج.م</span>
+          <span className="currency-tag mono">GIZA · EGP ج.م</span>
           <button
             type="button"
-            className="icon-btn"
-            onClick={() => setSearchOpen((prev) => !prev)}
+            className="icon-btn search-toggle-btn"
+            aria-label="Toggle search"
+            aria-expanded={searchOpen}
+            onClick={() => {
+              setSearchOpen((prev) => !prev);
+              setMobileMenuOpen(false);
+            }}
           >
-            Search
+            <Search size={14} className="search-icon-only" aria-hidden="true" />
+            <span className="search-label">Search</span>
           </button>
           <button
             type="button"
@@ -100,6 +138,49 @@ export function SiteHeader({
         </div>
       </div>
 
+      <nav
+        className={`mobile-nav-drawer${mobileMenuOpen ? " active" : ""}`}
+        aria-label="Mobile Navigation"
+      >
+        <div className="mobile-nav-links">
+          <a
+            href="#archive-grid"
+            className="nav-link hot"
+            onClick={() => handleMobileSelect("all")}
+          >
+            New Drop <sup>{totalCount}</sup>
+          </a>
+          <a
+            href="#archive-grid"
+            className="nav-link"
+            onClick={() => handleMobileSelect(LINE_A)}
+          >
+            {LINE_A} <sup>{lineACount}</sup>
+          </a>
+          <a
+            href="#archive-grid"
+            className="nav-link"
+            onClick={() => handleMobileSelect(LINE_B)}
+          >
+            {LINE_B} <sup>{lineBCount}</sup>
+          </a>
+          <a
+            href="#showroom"
+            className="nav-link"
+            onClick={() => handleMobileSelect()}
+          >
+            3D Rail
+          </a>
+          <a
+            href="#how-to-style"
+            className="nav-link"
+            onClick={() => handleMobileSelect()}
+          >
+            How To Style
+          </a>
+        </div>
+      </nav>
+
       <div className={`search-popdown${searchOpen ? " active" : ""}`}>
         <div className="search-bar-wrap">
           <span className="mono" style={{ fontSize: "12px" }} aria-hidden="true">
@@ -110,7 +191,7 @@ export function SiteHeader({
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="SEARCH WASHED LEATHER, WORK JACKETS, BARREL DENIM, HOODIES..."
+            placeholder="SEARCH KNITWEAR, BARREL DENIM, CORDUROY, BOXY TEES, SETS..."
           />
           <button
             type="button"
@@ -119,6 +200,7 @@ export function SiteHeader({
               fontSize: "10px",
               fontWeight: 700,
               letterSpacing: "0.14em",
+              whiteSpace: "nowrap",
             }}
           >
             CLOSE ×

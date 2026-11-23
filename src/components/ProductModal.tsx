@@ -43,7 +43,7 @@ export function ProductModal({
   const urgencyText =
     selectedSize === "S" || selectedSize === "M"
       ? `✦ SELLING FAST · Only ${selectedSize === "S" ? 3 : 5} left in ${selectedSize}`
-      : `✓ IN STOCK · Ready for Cairo Dispatch (${selectedSize})`;
+      : `✓ IN STOCK · Ready for Giza Dispatch (${selectedSize})`;
 
   return (
     <div
@@ -82,6 +82,27 @@ export function ProductModal({
           <div className="pdp-price mono">
             LE {product.price.toLocaleString()}.00 EGP
           </div>
+
+          <p className="pdp-description">{product.description}</p>
+
+          <dl className="pdp-spec-grid mono">
+            <div>
+              <dt>FABRIC</dt>
+              <dd>{product.fabricWeight}</dd>
+            </div>
+            <div>
+              <dt>COMPOSITION</dt>
+              <dd>{product.composition}</dd>
+            </div>
+            <div>
+              <dt>WASH</dt>
+              <dd>{product.washProcess}</dd>
+            </div>
+            <div>
+              <dt>SILHOUETTE</dt>
+              <dd>{product.fitProfile}</dd>
+            </div>
+          </dl>
 
           <div className="pdp-size-header">
             <span>SELECT SIZE</span>

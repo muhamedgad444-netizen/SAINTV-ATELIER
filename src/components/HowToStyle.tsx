@@ -9,7 +9,7 @@ export function HowToStyle({ productsById, onInspect }: HowToStyleProps) {
   return (
     <section className="style-section" id="how-to-style">
       <div className="section-head-split">
-        <h3>HOW TO STYLE // CAIRO STREET ROTATION</h3>
+        <h3>HOW TO STYLE // GIZA STREET ROTATION</h3>
         <span
           className="mono"
           style={{

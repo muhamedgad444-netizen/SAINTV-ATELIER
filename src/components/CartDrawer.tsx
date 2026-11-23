@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { CartEntry, GarmentProduct, GarmentSize } from "../data/catalog";
+import { submitOrder } from "../lib/api";
 
 interface CartDrawerProps {
   open: boolean;
@@ -21,10 +22,14 @@ export function CartDrawer({
   onAddUpsell,
 }: CartDrawerProps) {
   const [checkedOut, setCheckedOut] = useState(false);
+  const [orderCode, setOrderCode] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setCheckedOut(false);
+    setOrderCode(null);
+    setSubmitting(false);
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
@@ -39,6 +44,15 @@ export function CartDrawer({
     (sum, entry) => sum + entry.qty * entry.item.price,
     0
   );
+
+  const handleCheckout = async () => {
+    if (items.length === 0 || submitting) return;
+    setSubmitting(true);
+    const result = await submitOrder(items, { paymentMethod: "COD" });
+    setOrderCode(result.orderCode);
+    setCheckedOut(true);
+    setSubmitting(false);
+  };
 
   return (
     <div
@@ -181,7 +195,7 @@ export function CartDrawer({
                   textTransform: "uppercase",
                 }}
               >
-                CRIMSON WASHED BOXY TEE — LE {upsellProduct.price}
+                {upsellProduct.name} — LE {upsellProduct.price.toLocaleString()}
               </div>
             </div>
             <button
@@ -204,10 +218,13 @@ export function CartDrawer({
             type="button"
             className="pill-btn solid-dark"
             style={{ width: "100%", padding: "15px" }}
-            onClick={() => setCheckedOut(true)}
+            disabled={submitting || items.length === 0}
+            onClick={handleCheckout}
           >
-            {checkedOut
-              ? "ORDER DISPATCHED — CAIRO COURIER ✓"
+            {submitting
+              ? "DISPATCHING ORDER..."
+              : checkedOut
+              ? `ORDER ${orderCode ?? "CONFIRMED"} — GIZA COURIER ✓`
               : "🔒 CHECK OUT — CASH ON DELIVERY / CARD"}
           </button>
         </div>
