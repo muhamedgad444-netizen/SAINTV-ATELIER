@@ -2,6 +2,16 @@ import { CartEntry, GarmentProduct } from "../data/catalog";
 
 const API_BASE = (import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "");
 
+export interface CheckoutCustomerDetails {
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  shippingCity: string;
+  shippingAddress: string;
+  paymentMethod: "COD" | "CARD";
+  promoCode?: string;
+}
+
 export interface OrderSubmissionResult {
   ok: boolean;
   orderCode: string;
@@ -22,7 +32,7 @@ export async function fetchRemoteCatalog(): Promise<GarmentProduct[] | null> {
 
 export async function submitOrder(
   items: CartEntry[],
-  options?: { promoCode?: string; paymentMethod?: "COD" | "CARD" }
+  customer: CheckoutCustomerDetails
 ): Promise<OrderSubmissionResult> {
   const fallbackCode = `SV-GIZA-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
   if (!API_BASE) {
@@ -34,13 +44,18 @@ export async function submitOrder(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        customerName: customer.customerName,
+        customerPhone: customer.customerPhone,
+        customerEmail: customer.customerEmail || undefined,
+        shippingCity: customer.shippingCity,
+        shippingAddress: customer.shippingAddress,
+        paymentMethod: customer.paymentMethod,
+        promoCode: customer.promoCode || undefined,
         items: items.map((entry) => ({
           productId: entry.item.id,
           size: entry.size,
           quantity: entry.qty,
         })),
-        paymentMethod: options?.paymentMethod ?? "COD",
-        promoCode: options?.promoCode,
       }),
     });
 

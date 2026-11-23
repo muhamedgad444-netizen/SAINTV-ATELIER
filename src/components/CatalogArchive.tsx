@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   ArchiveFilter,
   GarmentProduct,
@@ -35,6 +35,9 @@ export function CatalogArchive({
   onInspect,
   onQuickAdd,
 }: CatalogArchiveProps) {
+  const [selectedSwatches, setSelectedSwatches] = useState<
+    Record<string, number>
+  >({});
   const categoryPills: { value: ArchiveFilter; label: string }[] = [
     { value: "all", label: `ALL ARCHIVE (${products.length})` },
     { value: LINE_A, label: `${LINE_A} (${lineACount})` },
@@ -121,83 +124,115 @@ export function CatalogArchive({
       </div>
 
       <div className="product-grid">
-        {filteredProducts.map((item) => (
-          <div
-            key={item.id}
-            className="p-card"
-            role="button"
-            tabIndex={0}
-            onClick={() => onInspect(item, 0)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onInspect(item, 0);
-              }
-            }}
-          >
-            <div className="p-media">
-              <div className="p-badges">
-                <span
-                  className={`badge-pill ${
-                    item.brand === LINE_A ? "brand-sn2" : "brand-coddi"
-                  } mono`}
-                >
-                  {item.brand} · {item.badge}
-                </span>
-                <span className="badge-pill scarcity mono">{item.scarcity}</span>
-              </div>
-              <img
-                className="main-img"
-                src={item.image}
-                alt={item.name}
-                loading="lazy"
-              />
-              <div
-                className="quick-size-bar mono"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <span className="quick-size-label">+ BAG:</span>
-                {item.availableSizes.map((sz) => (
-                  <button
-                    key={sz}
-                    type="button"
-                    className="q-size-btn"
-                    onClick={() => onQuickAdd(item, sz)}
-                  >
-                    {sz}
-                  </button>
-                ))}
-              </div>
-            </div>
+        {filteredProducts.map((item) => {
+          const swatchIdx = selectedSwatches[item.id] ?? 0;
+          const filterStyle =
+            item.swatchDetails[swatchIdx]?.filterStyle ?? "none";
 
-            <div className="p-info">
-              <div className="p-title">{item.name}</div>
-              <div className="p-price-row mono">
-                {item.compareAt ? (
-                  <>
-                    <span className="sale-price">
-                      LE {item.price.toLocaleString()}.00
-                    </span>
-                    <span className="compare-price">
-                      LE {item.compareAt.toLocaleString()}.00
-                    </span>
-                  </>
-                ) : (
-                  <span>LE {item.price.toLocaleString()}.00 EGP</span>
-                )}
-              </div>
-              <div className="swatch-row">
-                {item.swatches.map((color) => (
+          return (
+            <div
+              key={item.id}
+              className="p-card"
+              role="button"
+              tabIndex={0}
+              onClick={() => onInspect(item, swatchIdx)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onInspect(item, swatchIdx);
+                }
+              }}
+            >
+              <div className="p-media">
+                <div className="p-badges">
                   <span
-                    key={color}
-                    className="swatch-dot"
-                    style={{ background: color }}
+                    className={`badge-pill ${
+                      item.brand === LINE_A ? "brand-sn2" : "brand-coddi"
+                    } mono`}
+                  >
+                    {item.brand} · {item.badge}
+                  </span>
+                  <span className="badge-pill scarcity mono">
+                    {item.scarcity}
+                  </span>
+                </div>
+                <img
+                  className="main-img"
+                  src={item.image}
+                  alt={item.name}
+                  loading="lazy"
+                  style={{ filter: filterStyle }}
+                />
+                {item.hoverImage && item.hoverImage !== item.image ? (
+                  <img
+                    className="hover-img"
+                    src={item.hoverImage}
+                    alt={`${item.name} — alternate view`}
+                    style={{ filter: filterStyle }}
                   />
-                ))}
+                ) : null}
+                <div
+                  className="quick-size-bar mono"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <span className="quick-size-label">+ BAG:</span>
+                  {item.availableSizes.map((sz) => (
+                    <button
+                      key={sz}
+                      type="button"
+                      className="q-size-btn"
+                      onClick={() => onQuickAdd(item, sz)}
+                    >
+                      {sz}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-info">
+                <div className="p-title">{item.name}</div>
+                <div className="p-price-row mono">
+                  {item.compareAt ? (
+                    <>
+                      <span className="sale-price">
+                        LE {item.price.toLocaleString()}.00
+                      </span>
+                      <span className="compare-price">
+                        LE {item.compareAt.toLocaleString()}.00
+                      </span>
+                    </>
+                  ) : (
+                    <span>LE {item.price.toLocaleString()}.00 EGP</span>
+                  )}
+                </div>
+                <div
+                  className="swatch-row"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {item.swatchDetails.map((swatch, idx) => (
+                    <button
+                      key={swatch.hex}
+                      type="button"
+                      title={swatch.name}
+                      aria-label={`Select colorway ${swatch.name}`}
+                      aria-pressed={idx === swatchIdx}
+                      className={`swatch-dot${
+                        idx === swatchIdx ? " active" : ""
+                      }`}
+                      style={{ background: swatch.hex }}
+                      onClick={() =>
+                        setSelectedSwatches((prev) => ({
+                          ...prev,
+                          [item.id]: idx,
+                        }))
+                      }
+                    />
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );
