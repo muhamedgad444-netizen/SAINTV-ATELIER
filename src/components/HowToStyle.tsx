@@ -9,17 +9,11 @@ export function HowToStyle({ productsById, onInspect }: HowToStyleProps) {
   return (
     <section className="style-section" id="how-to-style">
       <div className="section-head-split">
-        <h3>HOW TO STYLE // GIZA STREET ROTATION</h3>
-        <span
-          className="mono"
-          style={{
-            fontSize: "11px",
-            letterSpacing: "0.15em",
-            color: "var(--muted)",
-          }}
-        >
-          1-CLICK COMPLETE LOOK
-        </span>
+        <div>
+          <p className="section-eyebrow">LOOKBOOK EDIT · 01—04</p>
+          <h3>HOW TO STYLE // GIZA STREET ROTATION</h3>
+        </div>
+        <span className="section-meta">1-CLICK COMPLETE LOOK</span>
       </div>
 
       <div className="style-grid">

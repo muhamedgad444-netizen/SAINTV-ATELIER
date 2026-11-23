@@ -4,12 +4,15 @@ import * as healthRoute from "./api/health.js";
 import * as productsRoute from "./api/products/index.js";
 import * as productByIdRoute from "./api/products/[id].js";
 import * as ordersRoute from "./api/orders/index.js";
+import * as orderByIdRoute from "./api/orders/[id].js";
 import * as newsletterRoute from "./api/newsletter/index.js";
 import { errorResponse } from "./lib/http.js";
 
 type RouteModule = {
   GET?: (req: Request) => Response | Promise<Response>;
   POST?: (req: Request) => Response | Promise<Response>;
+  PATCH?: (req: Request) => Response | Promise<Response>;
+  DELETE?: (req: Request) => Response | Promise<Response>;
   OPTIONS?: (req: Request) => Response | Promise<Response>;
 };
 
@@ -43,6 +46,9 @@ function matchRoute(pathname: string): RouteModule | null {
     return productByIdRoute;
   }
   if (clean === "/api/orders") return ordersRoute;
+  if (clean.startsWith("/api/orders/") && clean.split("/").length === 4) {
+    return orderByIdRoute;
+  }
   if (clean === "/api/newsletter") return newsletterRoute;
   return null;
 }

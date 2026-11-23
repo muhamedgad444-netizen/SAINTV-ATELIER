@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { X } from "lucide-react";
 import {
   ArchiveFilter,
   GarmentProduct,
@@ -6,6 +7,7 @@ import {
   LINE_A,
   LINE_B,
   SortMode,
+  formatEGP,
 } from "../data/catalog";
 
 interface CatalogArchiveProps {
@@ -72,18 +74,12 @@ export function CatalogArchive({
     <section className="catalog-section" id="archive-grid">
       <div className="catalog-top-bar">
         <div className="catalog-heading">
+          <p className="section-eyebrow">FULL STUDIO ARCHIVE · FW26/27</p>
           <h2>
             UNDERGROUND ARCHIVE <sup>{filteredProducts.length}</sup>
           </h2>
         </div>
-        <div
-          className="mono"
-          style={{
-            fontSize: "11px",
-            letterSpacing: "0.14em",
-            color: "var(--muted)",
-          }}
-        >
+        <div className="section-meta">
           SEAMLESS STUDIO CUTOUTS · HOVER FOR 1-CLICK SIZE QUICK-ADD
         </div>
       </div>
@@ -103,13 +99,26 @@ export function CatalogArchive({
         </div>
 
         <div className="sn2-query-box">
-          <input
-            type="text"
-            className="sn2-inline-search"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="What are you looking for?"
-          />
+          <div className="sn2-search-field">
+            <input
+              type="text"
+              className="sn2-inline-search"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Search archive..."
+              aria-label="Search archive pieces"
+            />
+            {searchQuery ? (
+              <button
+                type="button"
+                className="sn2-search-clear"
+                onClick={() => onSearchChange("")}
+                aria-label="Clear search"
+              >
+                <X size={13} aria-hidden="true" />
+              </button>
+            ) : null}
+          </div>
           <select
             className="sn2-sort-select"
             value={sortMode}
@@ -123,6 +132,27 @@ export function CatalogArchive({
         </div>
       </div>
 
+      {filteredProducts.length === 0 ? (
+        <div className="catalog-empty">
+          <h3>NO ARCHIVE PIECES FOUND</h3>
+          <p className="mono">
+            {searchQuery
+              ? `NO MATCHES FOR "${searchQuery.trim()}" IN THIS VIEW`
+              : "NO PIECES AVAILABLE IN THIS FILTER"}
+          </p>
+          <button
+            type="button"
+            className="pill-btn solid-dark"
+            onClick={() => {
+              onCategoryChange("all");
+              onSearchChange("");
+              onSortChange("featured");
+            }}
+          >
+            RESET ARCHIVE FILTERS
+          </button>
+        </div>
+      ) : (
       <div className="product-grid">
         {filteredProducts.map((item) => {
           const swatchIdx = selectedSwatches[item.id] ?? 0;
@@ -195,14 +225,14 @@ export function CatalogArchive({
                   {item.compareAt ? (
                     <>
                       <span className="sale-price">
-                        LE {item.price.toLocaleString()}.00
+                        {formatEGP(item.price)}
                       </span>
                       <span className="compare-price">
-                        LE {item.compareAt.toLocaleString()}.00
+                        LE {item.compareAt.toLocaleString("en-US")}
                       </span>
                     </>
                   ) : (
-                    <span>LE {item.price.toLocaleString()}.00 EGP</span>
+                    <span>{formatEGP(item.price)}</span>
                   )}
                 </div>
                 <div
@@ -234,6 +264,7 @@ export function CatalogArchive({
           );
         })}
       </div>
+      )}
     </section>
   );
 }

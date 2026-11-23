@@ -1,5 +1,11 @@
 import { FormEvent, useEffect, useState } from "react";
-import { CartEntry, GarmentProduct, GarmentSize } from "../data/catalog";
+import { Lock, X } from "lucide-react";
+import {
+  CartEntry,
+  GarmentProduct,
+  GarmentSize,
+  formatEGP,
+} from "../data/catalog";
 import { submitOrder } from "../lib/api";
 
 interface CartDrawerProps {
@@ -10,9 +16,19 @@ interface CartDrawerProps {
   onUpdateQty: (index: number, delta: number) => void;
   onRemoveItem: (index: number) => void;
   onAddUpsell: (product: GarmentProduct, size: GarmentSize) => void;
+  onClearBag: () => void;
 }
 
 type DrawerStep = "bag" | "checkout" | "confirmed";
+
+interface ConfirmedSnapshot {
+  count: number;
+  totalEgp: number;
+  city: string;
+  paymentMethod: "COD" | "CARD";
+}
+
+const PROMO_THRESHOLD = 2999;
 
 export function CartDrawer({
   open,
@@ -22,6 +38,7 @@ export function CartDrawer({
   onUpdateQty,
   onRemoveItem,
   onAddUpsell,
+  onClearBag,
 }: CartDrawerProps) {
   const [step, setStep] = useState<DrawerStep>("bag");
   const [promoInput, setPromoInput] = useState("");
@@ -36,6 +53,8 @@ export function CartDrawer({
   const [formError, setFormError] = useState<string | null>(null);
 
   const [orderCode, setOrderCode] = useState<string | null>(null);
+  const [confirmedSummary, setConfirmedSummary] =
+    useState<ConfirmedSnapshot | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -43,6 +62,10 @@ export function CartDrawer({
     setStep("bag");
     setFormError(null);
     setSubmitting(false);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
@@ -58,9 +81,12 @@ export function CartDrawer({
     0
   );
 
-  const promoEligible = appliedPromo === "GIZA26" && subtotalEgp >= 2999;
+  const promoEligible =
+    appliedPromo === "GIZA26" && subtotalEgp >= PROMO_THRESHOLD;
   const discountEgp = promoEligible ? Math.round(subtotalEgp * 0.1) : 0;
   const totalEgp = Math.max(0, subtotalEgp - discountEgp);
+  const promoProgress = Math.min(100, Math.round((subtotalEgp / PROMO_THRESHOLD) * 100));
+  const promoRemaining = Math.max(0, PROMO_THRESHOLD - subtotalEgp);
 
   const handleApplyPromo = (e: FormEvent) => {
     e.preventDefault();
@@ -68,12 +94,11 @@ export function CartDrawer({
     if (!code) return;
     if (code === "GIZA26") {
       setAppliedPromo("GIZA26");
-      if (subtotalEgp >= 2999) {
+      if (subtotalEgp >= PROMO_THRESHOLD) {
         setPromoFeedback("GIZA26 APPLIED · 10% OFF ACTIVE");
       } else {
-        const diff = 2999 - subtotalEgp;
         setPromoFeedback(
-          `GIZA26 SAVED · ADD LE ${diff.toLocaleString()} MORE FOR 10% OFF`
+          `GIZA26 SAVED · ADD ${formatEGP(PROMO_THRESHOLD - subtotalEgp)} MORE FOR 10% OFF`
         );
       }
     } else {
@@ -92,16 +117,27 @@ export function CartDrawer({
 
     setFormError(null);
     setSubmitting(true);
+    const snapshot: ConfirmedSnapshot = {
+      count: totalCount,
+      totalEgp,
+      city: shippingCity.trim() || "Giza",
+      paymentMethod,
+    };
     const result = await submitOrder(items, {
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim(),
-      shippingCity: shippingCity.trim() || "Giza",
+      shippingCity: snapshot.city,
       shippingAddress: shippingAddress.trim(),
       paymentMethod,
       promoCode: promoEligible ? "GIZA26" : undefined,
     });
     setOrderCode(result.orderCode);
+    setConfirmedSummary(snapshot);
     setSubmitting(false);
+    setAppliedPromo(null);
+    setPromoInput("");
+    setPromoFeedback(null);
+    onClearBag();
     setStep("confirmed");
   };
 
@@ -126,30 +162,40 @@ export function CartDrawer({
           </h4>
           <button
             type="button"
+            className="cart-close-btn"
             onClick={onClose}
-            style={{
-              fontSize: "12px",
-              fontWeight: 700,
-              letterSpacing: "0.15em",
-            }}
+            aria-label="Close bag"
           >
-            CLOSE ✕
+            <span>CLOSE</span>
+            <X size={15} aria-hidden="true" />
           </button>
         </div>
 
         {step === "bag" ? (
           <>
+            <div
+              className={`cart-promo-banner mono${
+                promoRemaining === 0 ? " is-unlocked" : ""
+              }`}
+            >
+              <span>
+                {promoRemaining === 0
+                  ? promoEligible
+                    ? "✓ 10% OFF UNLOCKED & ACTIVE (CODE: GIZA26)"
+                    : "✓ 10% OFF UNLOCKED — APPLY CODE GIZA26 BELOW"
+                  : `ADD ${formatEGP(promoRemaining)} MORE TO UNLOCK 10% OFF (CODE: GIZA26)`}
+              </span>
+              <div className="cart-promo-track" aria-hidden="true">
+                <div
+                  className="cart-promo-fill"
+                  style={{ width: `${promoProgress}%` }}
+                />
+              </div>
+            </div>
+
             <div className="cart-items">
               {items.length === 0 ? (
-                <p
-                  className="mono"
-                  style={{
-                    fontSize: "11px",
-                    color: "var(--muted)",
-                    textAlign: "center",
-                    padding: "32px 0",
-                  }}
-                >
+                <p className="cart-empty mono">
                   YOUR UNDERGROUND BAG IS EMPTY
                 </p>
               ) : (
@@ -160,46 +206,16 @@ export function CartDrawer({
                   >
                     <img src={entry.item.image} alt={entry.item.name} />
                     <div>
-                      <div
-                        className="mono"
-                        style={{ fontSize: "9px", color: "var(--muted)" }}
-                      >
+                      <div className="cart-item-brand mono">
                         {entry.item.brandLabel}
                       </div>
-                      <div
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: 800,
-                          margin: "2px 0",
-                        }}
-                      >
-                        {entry.item.name}
-                      </div>
-                      <div className="mono" style={{ fontSize: "10px" }}>
-                        SIZE: {entry.size} · LE{" "}
-                        {entry.item.price.toLocaleString()}
+                      <div className="cart-item-name">{entry.item.name}</div>
+                      <div className="cart-item-meta mono">
+                        SIZE: {entry.size} · {formatEGP(entry.item.price)}
                       </div>
                     </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "flex-end",
-                        gap: "6px",
-                      }}
-                    >
-                      <div
-                        className="mono"
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          border: "1px solid rgba(0,0,0,0.2)",
-                          borderRadius: "99px",
-                          padding: "2px 10px",
-                          fontSize: "11px",
-                        }}
-                      >
+                    <div className="cart-item-actions">
+                      <div className="cart-qty-control mono">
                         <button
                           type="button"
                           onClick={() => onUpdateQty(idx, -1)}
@@ -218,13 +234,8 @@ export function CartDrawer({
                       </div>
                       <button
                         type="button"
-                        className="mono"
+                        className="cart-remove-btn mono"
                         onClick={() => onRemoveItem(idx)}
-                        style={{
-                          fontSize: "9px",
-                          textDecoration: "underline",
-                          color: "var(--muted)",
-                        }}
                       >
                         Remove
                       </button>
@@ -236,33 +247,18 @@ export function CartDrawer({
 
             {upsellProduct ? (
               <div className="cart-upsell">
-                <div>
-                  <div
-                    className="mono"
-                    style={{
-                      fontSize: "9px",
-                      fontWeight: 700,
-                      color: "var(--coddi-red)",
-                      letterSpacing: "0.14em",
-                    }}
-                  >
+                <div className="cart-upsell-copy">
+                  <div className="cart-upsell-kicker mono">
                     ESSENTIAL ADD-ON
                   </div>
-                  <div
-                    style={{
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    {upsellProduct.name} — LE{" "}
-                    {upsellProduct.price.toLocaleString()}
+                  <div className="cart-upsell-title">{upsellProduct.name}</div>
+                  <div className="cart-upsell-price mono">
+                    {formatEGP(upsellProduct.price)}
                   </div>
                 </div>
                 <button
                   type="button"
-                  className="pill-btn solid-dark"
-                  style={{ padding: "7px 14px", fontSize: "9px" }}
+                  className="pill-btn solid-dark cart-upsell-btn"
                   onClick={() => onAddUpsell(upsellProduct, "L")}
                 >
                   + ADD
@@ -295,24 +291,23 @@ export function CartDrawer({
               <div className="cart-summary-lines mono">
                 <div className="cart-summary-row">
                   <span>SUBTOTAL</span>
-                  <span>LE {subtotalEgp.toLocaleString()}.00 EGP</span>
+                  <span>{formatEGP(subtotalEgp)}</span>
                 </div>
                 {discountEgp > 0 ? (
                   <div className="cart-summary-row is-discount">
                     <span>DISCOUNT (GIZA26 · 10%)</span>
-                    <span>− LE {discountEgp.toLocaleString()}.00 EGP</span>
+                    <span>− {formatEGP(discountEgp)}</span>
                   </div>
                 ) : null}
                 <div className="cart-subtotal">
                   <span>TOTAL</span>
-                  <span>LE {totalEgp.toLocaleString()}.00 EGP</span>
+                  <span>{formatEGP(totalEgp)}</span>
                 </div>
               </div>
 
               <button
                 type="button"
-                className="pill-btn solid-dark"
-                style={{ width: "100%", padding: "15px" }}
+                className="pill-btn solid-dark cart-cta-btn"
                 disabled={items.length === 0}
                 onClick={() => setStep("checkout")}
               >
@@ -422,17 +417,19 @@ export function CartDrawer({
             <div className="cart-foot">
               <div className="cart-subtotal mono">
                 <span>TOTAL DUE ({paymentMethod})</span>
-                <span>LE {totalEgp.toLocaleString()}.00 EGP</span>
+                <span>{formatEGP(totalEgp)}</span>
               </div>
               <button
                 type="submit"
-                className="pill-btn solid-dark"
-                style={{ width: "100%", padding: "15px" }}
+                className="pill-btn solid-dark cart-cta-btn"
                 disabled={submitting}
               >
-                {submitting
-                  ? "CONFIRMING WITH GIZA DISPATCH..."
-                  : `🔒 PLACE ORDER — LE ${totalEgp.toLocaleString()} EGP`}
+                <Lock size={13} aria-hidden="true" />
+                <span>
+                  {submitting
+                    ? "CONFIRMING WITH GIZA DISPATCH..."
+                    : `PLACE ORDER — ${formatEGP(totalEgp)}`}
+                </span>
               </button>
             </div>
           </form>
@@ -442,16 +439,16 @@ export function CartDrawer({
             <h5>THANK YOU, {customerName.toUpperCase() || "MEMBER"}</h5>
             <p className="mono cart-confirmed-code">ORDER REF: {orderCode}</p>
             <p className="cart-confirmed-note">
-              Your SAINTV archive order ({totalCount}{" "}
-              {totalCount === 1 ? "piece" : "pieces"} · LE{" "}
-              {totalEgp.toLocaleString()}.00 EGP · {paymentMethod}) is logged
-              for delivery to <strong>{shippingCity}</strong> within 2–5 working
-              days.
+              Your SAINTV archive order ({confirmedSummary?.count ?? 0}{" "}
+              {(confirmedSummary?.count ?? 0) === 1 ? "piece" : "pieces"} ·{" "}
+              {formatEGP(confirmedSummary?.totalEgp ?? 0)} ·{" "}
+              {confirmedSummary?.paymentMethod ?? paymentMethod}) is logged for
+              delivery to <strong>{confirmedSummary?.city ?? shippingCity}</strong>{" "}
+              within 2–5 working days.
             </p>
             <button
               type="button"
-              className="pill-btn solid-dark"
-              style={{ width: "100%", padding: "14px" }}
+              className="pill-btn solid-dark cart-cta-btn"
               onClick={onClose}
             >
               CONTINUE BROWSING ARCHIVE

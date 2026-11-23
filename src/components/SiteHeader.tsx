@@ -7,7 +7,9 @@ interface SiteHeaderProps {
   lineACount: number;
   lineBCount: number;
   bagCount: number;
+  activeCategory: ArchiveFilter;
   searchQuery: string;
+  matchCount: number;
   onSearchChange: (value: string) => void;
   onSelectFilter: (filter: ArchiveFilter) => void;
   onOpenCart: () => void;
@@ -21,7 +23,9 @@ export function SiteHeader({
   lineACount,
   lineBCount,
   bagCount,
+  activeCategory,
   searchQuery,
+  matchCount,
   onSearchChange,
   onSelectFilter,
   onOpenCart,
@@ -72,21 +76,21 @@ export function SiteHeader({
         <nav className="nav-left" aria-label="Primary">
           <a
             href="#archive-grid"
-            className="nav-link hot"
+            className={`nav-link hot${activeCategory === "all" ? " is-active" : ""}`}
             onClick={() => onSelectFilter("all")}
           >
             New Drop <sup>{totalCount}</sup>
           </a>
           <a
             href="#archive-grid"
-            className="nav-link"
+            className={`nav-link${activeCategory === LINE_A ? " is-active" : ""}`}
             onClick={() => onSelectFilter(LINE_A)}
           >
             {LINE_A} <sup>{lineACount}</sup>
           </a>
           <a
             href="#archive-grid"
-            className="nav-link"
+            className={`nav-link${activeCategory === LINE_B ? " is-active" : ""}`}
             onClick={() => onSelectFilter(LINE_B)}
           >
             {LINE_B} <sup>{lineBCount}</sup>
@@ -182,30 +186,39 @@ export function SiteHeader({
       </nav>
 
       <div className={`search-popdown${searchOpen ? " active" : ""}`}>
-        <div className="search-bar-wrap">
-          <span className="mono" style={{ fontSize: "12px" }} aria-hidden="true">
-            ⌕
-          </span>
+        <form
+          className="search-bar-wrap"
+          onSubmit={(e) => {
+            e.preventDefault();
+            document
+              .getElementById("archive-grid")
+              ?.scrollIntoView({ behavior: "smooth" });
+            setSearchOpen(false);
+          }}
+        >
+          <Search size={15} aria-hidden="true" />
           <input
             ref={inputRef}
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="SEARCH KNITWEAR, BARREL DENIM, CORDUROY, BOXY TEES, SETS..."
+            aria-label="Search archive"
           />
+          {searchQuery.trim() ? (
+            <button type="submit" className="search-bar-jump mono">
+              VIEW {matchCount} {matchCount === 1 ? "RESULT" : "RESULTS"} ↓
+            </button>
+          ) : null}
           <button
             type="button"
+            className="search-bar-close"
             onClick={() => setSearchOpen(false)}
-            style={{
-              fontSize: "10px",
-              fontWeight: 700,
-              letterSpacing: "0.14em",
-              whiteSpace: "nowrap",
-            }}
           >
-            CLOSE ×
+            <span>CLOSE</span>
+            <X size={13} aria-hidden="true" />
           </button>
-        </div>
+        </form>
       </div>
     </header>
   );

@@ -71,14 +71,27 @@ export function ShowroomRail({
     if (!el) return;
 
     const updateWidth = () => {
-      const nextW = el.clientWidth;
+      const nextW = Math.round(el.getBoundingClientRect().width || el.clientWidth);
       if (nextW > 0) setStageWidth(nextW);
     };
 
     updateWidth();
-    const observer = new ResizeObserver(updateWidth);
+    const rafId = requestAnimationFrame(updateWidth);
+    const observer = new ResizeObserver((entries) => {
+      const entryW = entries[0]?.contentRect?.width;
+      if (entryW && entryW > 0) {
+        setStageWidth(Math.round(entryW));
+      } else {
+        updateWidth();
+      }
+    });
     observer.observe(el);
-    return () => observer.disconnect();
+    window.addEventListener("resize", updateWidth);
+    return () => {
+      cancelAnimationFrame(rafId);
+      observer.disconnect();
+      window.removeEventListener("resize", updateWidth);
+    };
   }, []);
 
   const handleFilterChange = (nextFilter: RailFilter) => {
@@ -516,7 +529,7 @@ export function ShowroomRail({
                 className="sr-btn-primary"
               >
                 <ZoomIn size={14} aria-hidden="true" />
-                Inspect 2.4×
+                Inspect Piece
               </button>
 
               {!quickSizeOpen ? (

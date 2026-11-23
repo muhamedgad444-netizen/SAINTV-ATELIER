@@ -4,7 +4,11 @@ import { subscribeNewsletter } from "../lib/api";
 const COMPASS_STAR_PATH =
   "M32 0 L36.5 23.5 L64 32 L36.5 40.5 L32 64 L27.5 40.5 L0 32 L27.5 23.5 Z M32 14 L45 19 L37 32 L45 45 L32 39 L19 45 L27 32 L19 19 Z";
 
-export function ObsidianFooter() {
+interface ObsidianFooterProps {
+  onOpenAdmin?: () => void;
+}
+
+export function ObsidianFooter({ onOpenAdmin }: ObsidianFooterProps) {
   const [email, setEmail] = useState("");
   const [joined, setJoined] = useState(false);
 
@@ -21,15 +25,7 @@ export function ObsidianFooter() {
     <footer className="obsidian-manifesto">
       <div className="manifesto-banner">
         <div>
-          <div
-            className="mono"
-            style={{
-              fontSize: "10px",
-              letterSpacing: "0.24em",
-              color: "var(--coddi-red)",
-              marginBottom: "8px",
-            }}
-          >
+          <div className="manifesto-eyebrow mono">
             DROP THE SHOP · GIZA ARCHIVE // GIZA ROOFTOPS
           </div>
           <h2>
@@ -39,8 +35,7 @@ export function ObsidianFooter() {
           </h2>
         </div>
         <svg
-          width="74"
-          height="74"
+          className="manifesto-star"
           viewBox="0 0 64 64"
           fill="#fcfcfc"
           aria-hidden="true"
@@ -52,13 +47,7 @@ export function ObsidianFooter() {
       <div className="footer-columns">
         <div className="footer-col">
           <h5>UNDERGROUND DISPATCH // EARLY ACCESS</h5>
-          <p
-            style={{
-              fontSize: "12px",
-              color: "rgba(252,252,252,0.75)",
-              lineHeight: 1.6,
-            }}
-          >
+          <p className="footer-lead">
             Subscribe for private password drops, Giza pop-up coordinates,
             and 10% off orders over 2,999 EGP.
           </p>
@@ -72,6 +61,11 @@ export function ObsidianFooter() {
             />
             <button type="submit">{joined ? "JOINED ✓" : "JOIN"}</button>
           </form>
+          {joined ? (
+            <p className="newsletter-confirm mono">
+              ACCESS CONFIRMED · USE CODE GIZA26 FOR 10% OFF ORDERS OVER 2,999 EGP
+            </p>
+          ) : null}
         </div>
 
         <div className="footer-col">
@@ -96,19 +90,25 @@ export function ObsidianFooter() {
             <li>
               <a href="#how-to-style">GIZA STREET ROTATION LOOKBOOK ↗</a>
             </li>
+            {onOpenAdmin ? (
+              <li>
+                <a
+                  href="/admin"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onOpenAdmin();
+                  }}
+                >
+                  OPERATIONS CONSOLE (ADMIN) ↗
+                </a>
+              </li>
+            ) : null}
           </ul>
         </div>
       </div>
 
       <div className="footer-big-mark">
-        <div
-          className="mono"
-          style={{
-            fontSize: "10px",
-            letterSpacing: "0.25em",
-            color: "rgba(255,255,255,0.45)",
-          }}
-        >
+        <div className="footer-copyright mono">
           © 2026 SAINTV STUDIOS · SAINTV × ATELIER · BUILT FOR GIZA
         </div>
       </div>

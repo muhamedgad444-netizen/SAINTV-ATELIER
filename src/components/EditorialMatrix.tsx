@@ -42,17 +42,11 @@ export function EditorialMatrix({ onJumpCategory }: EditorialMatrixProps) {
   return (
     <section className="matrix-section">
       <div className="section-head-split">
-        <h3>CURATED SILHOUETTES // 01—03</h3>
-        <span
-          className="mono"
-          style={{
-            fontSize: "11px",
-            letterSpacing: "0.15em",
-            color: "var(--muted)",
-          }}
-        >
-          GIZA // EGYPT
-        </span>
+        <div>
+          <p className="section-eyebrow">CAPSULE PILLARS · FW26/27</p>
+          <h3>CURATED SILHOUETTES // 01—03</h3>
+        </div>
+        <span className="section-meta">GIZA // EGYPT</span>
       </div>
 
       <div className="matrix-grid">

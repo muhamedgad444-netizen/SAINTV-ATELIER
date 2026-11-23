@@ -46,13 +46,15 @@ export async function GET(request: Request): Promise<Response> {
     }
 
     const sql = getSql();
-    const orders = await sql`
+    const orders = (await sql`
       SELECT
         o.id,
         o.order_code AS "orderCode",
         o.customer_name AS "customerName",
         o.customer_email AS "customerEmail",
+        o.customer_phone AS "customerPhone",
         o.shipping_city AS "shippingCity",
+        o.shipping_address AS "shippingAddress",
         o.payment_method AS "paymentMethod",
         o.promo_code AS "promoCode",
         o.subtotal_egp AS "subtotalEgp",
@@ -63,12 +65,54 @@ export async function GET(request: Request): Promise<Response> {
       FROM orders o
       ORDER BY o.created_at DESC
       LIMIT 100
-    `;
+    `) as Record<string, unknown>[];
+
+    const orderIds = orders.map((o) => String(o.id));
+    const itemsByOrderId = new Map<string, Record<string, unknown>[]>();
+
+    if (orderIds.length > 0) {
+      const orderItems = (await sql`
+        SELECT
+          oi.order_id AS "orderId",
+          oi.product_id AS "productId",
+          COALESCE(p.name, oi.product_id) AS "productName",
+          COALESCE(p.sku, '') AS "sku",
+          oi.size,
+          oi.quantity,
+          oi.unit_price_egp AS "unitPriceEgp"
+        FROM order_items oi
+        LEFT JOIN products p ON p.id = oi.product_id
+        WHERE oi.order_id = ANY(${orderIds}::uuid[])
+        ORDER BY oi.id ASC
+      `) as Record<string, unknown>[];
+
+      for (const row of orderItems) {
+        const oid = String(row.orderId);
+        const list = itemsByOrderId.get(oid) ?? [];
+        list.push({
+          productId: row.productId,
+          productName: row.productName,
+          sku: row.sku,
+          size: row.size,
+          quantity: Number(row.quantity),
+          unitPriceEgp: Number(row.unitPriceEgp),
+        });
+        itemsByOrderId.set(oid, list);
+      }
+    }
+
+    const enrichedOrders = orders.map((o) => ({
+      ...o,
+      subtotalEgp: Number(o.subtotalEgp),
+      discountEgp: Number(o.discountEgp),
+      totalEgp: Number(o.totalEgp),
+      items: itemsByOrderId.get(String(o.id)) ?? [],
+    }));
 
     return jsonResponse({
       source: "database",
-      count: orders.length,
-      orders,
+      count: enrichedOrders.length,
+      orders: enrichedOrders,
     });
   } catch (err) {
     console.error("[GET /api/orders] Error listing orders:", err);
@@ -187,6 +231,11 @@ export async function POST(request: Request): Promise<Response> {
       await sql`
         INSERT INTO order_items (order_id, product_id, size, quantity, unit_price_egp)
         VALUES (${orderId}, ${line.productId}, ${line.size}, ${line.quantity}, ${line.unitPriceEgp})
+      `;
+      await sql`
+        UPDATE products
+        SET stock_qty = GREATEST(0, stock_qty - ${line.quantity}), updated_at = NOW()
+        WHERE id = ${line.productId}
       `;
     }
 

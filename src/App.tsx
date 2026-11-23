@@ -21,8 +21,20 @@ import { HowToStyle } from "./components/HowToStyle";
 import { ObsidianFooter } from "./components/ObsidianFooter";
 import { ProductModal } from "./components/ProductModal";
 import { CartDrawer } from "./components/CartDrawer";
+import { AdminDashboard } from "./components/AdminDashboard";
+import { fetchRemoteCatalog } from "./lib/api";
+
+function isAdminLocation(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    window.location.pathname.replace(/\/+$/, "") === "/admin" ||
+    window.location.hash === "#admin"
+  );
+}
 
 export default function App() {
+  const [isAdminRoute, setIsAdminRoute] = useState<boolean>(isAdminLocation);
+  const [products, setProducts] = useState<GarmentProduct[]>(CATALOG);
   const [activeCategory, setActiveCategory] = useState<ArchiveFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortMode, setSortMode] = useState<SortMode>("featured");
@@ -35,9 +47,43 @@ export default function App() {
     { item: CATALOG[1], size: "M", qty: 1 },
   ]);
 
+  useEffect(() => {
+    let active = true;
+    fetchRemoteCatalog().then((loaded) => {
+      if (active && loaded && loaded.length > 0) {
+        setProducts(loaded);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const syncRoute = () => setIsAdminRoute(isAdminLocation());
+    window.addEventListener("popstate", syncRoute);
+    window.addEventListener("hashchange", syncRoute);
+    return () => {
+      window.removeEventListener("popstate", syncRoute);
+      window.removeEventListener("hashchange", syncRoute);
+    };
+  }, []);
+
+  const handleOpenAdmin = useCallback(() => {
+    window.history.pushState(null, "", "/admin");
+    setIsAdminRoute(true);
+    window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+  }, []);
+
+  const handleExitAdmin = useCallback(() => {
+    window.history.pushState(null, "", "/");
+    setIsAdminRoute(false);
+    window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+  }, []);
+
   const productsById = useMemo(
-    () => new Map(CATALOG.map((p) => [p.id, p])),
-    []
+    () => new Map(products.map((p) => [p.id, p])),
+    [products]
   );
 
   const heroLineup = useMemo(
@@ -49,15 +95,31 @@ export default function App() {
   );
 
   const lineACount = useMemo(
-    () => CATALOG.filter((p) => p.brand === LINE_A).length,
-    []
+    () => products.filter((p) => p.brand === LINE_A).length,
+    [products]
   );
   const lineBCount = useMemo(
-    () => CATALOG.filter((p) => p.brand === LINE_B).length,
-    []
+    () => products.filter((p) => p.brand === LINE_B).length,
+    [products]
   );
   const totalBagCount = bag.reduce((sum, entry) => sum + entry.qty, 0);
   const upsellProduct = productsById.get("crimson-washed-boxy-tee");
+
+  const searchMatchCount = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return products.filter((item) => {
+      const matchCat =
+        activeCategory === "all" ||
+        item.brand === activeCategory ||
+        item.category === activeCategory;
+      const matchSearch =
+        !q ||
+        item.name.toLowerCase().includes(q) ||
+        item.brandLabel.toLowerCase().includes(q) ||
+        item.category.toLowerCase().includes(q);
+      return matchCat && matchSearch;
+    }).length;
+  }, [products, activeCategory, searchQuery]);
 
   useEffect(() => {
     const anyModalOpen = Boolean(inspected) || cartOpen;
@@ -110,6 +172,18 @@ export default function App() {
     setBag((prev) => prev.filter((_, idx) => idx !== index));
   }, []);
 
+  const handleClearBag = useCallback(() => {
+    setBag([]);
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setInspected(null);
+  }, []);
+
+  const handleCloseCart = useCallback(() => {
+    setCartOpen(false);
+  }, []);
+
   const handleJumpCategory = useCallback((category: GarmentCategory) => {
     setActiveCategory(category);
     document
@@ -117,16 +191,28 @@ export default function App() {
       ?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
+  if (isAdminRoute) {
+    return (
+      <AdminDashboard
+        products={products}
+        onProductsUpdated={setProducts}
+        onExitAdmin={handleExitAdmin}
+      />
+    );
+  }
+
   return (
     <>
       <AnnouncementBars />
 
       <SiteHeader
-        totalCount={CATALOG.length}
+        totalCount={products.length}
         lineACount={lineACount}
         lineBCount={lineBCount}
         bagCount={totalBagCount}
+        activeCategory={activeCategory}
         searchQuery={searchQuery}
+        matchCount={searchMatchCount}
         onSearchChange={setSearchQuery}
         onSelectFilter={setActiveCategory}
         onOpenCart={() => setCartOpen(true)}
@@ -135,18 +221,18 @@ export default function App() {
       <main>
         <HeroSplit
           lineupProducts={heroLineup}
-          totalCatalogCount={CATALOG.length}
+          totalCatalogCount={products.length}
           onInspect={handleInspect}
         />
 
         <ShowroomRail
-          products={CATALOG}
+          products={products}
           onInspect={handleInspect}
           onQuickAdd={handleRailQuickAdd}
         />
 
         <CatalogArchive
-          products={CATALOG}
+          products={products}
           activeCategory={activeCategory}
           searchQuery={searchQuery}
           sortMode={sortMode}
@@ -164,12 +250,12 @@ export default function App() {
         <HowToStyle productsById={productsById} onInspect={handleInspect} />
       </main>
 
-      <ObsidianFooter />
+      <ObsidianFooter onOpenAdmin={handleOpenAdmin} />
 
       <ProductModal
         product={inspected?.product ?? null}
         swatchIndex={inspected?.swatchIndex ?? 0}
-        onClose={() => setInspected(null)}
+        onClose={handleCloseModal}
         onAddToBag={handleAddToBag}
       />
 
@@ -177,10 +263,11 @@ export default function App() {
         open={cartOpen}
         items={bag}
         upsellProduct={upsellProduct}
-        onClose={() => setCartOpen(false)}
+        onClose={handleCloseCart}
         onUpdateQty={handleUpdateQty}
         onRemoveItem={handleRemoveItem}
         onAddUpsell={handleAddToBag}
+        onClearBag={handleClearBag}
       />
     </>
   );

@@ -10,11 +10,12 @@ backend/
 │   ├── health.ts             # GET /api/health
 │   ├── products/
 │   │   ├── index.ts          # GET /api/products (?category=&brand=&q=&sort=), POST (admin)
-│   │   └── [id].ts           # GET /api/products/:id
+│   │   └── [id].ts           # GET /api/products/:id, PATCH (admin), DELETE (admin)
 │   ├── orders/
-│   │   └── index.ts          # POST /api/orders (server-side pricing + GIZA26 promo), GET (admin)
+│   │   ├── index.ts          # POST /api/orders (authoritative pricing, GIZA26, stock decrement), GET (admin + items)
+│   │   └── [id].ts           # PATCH /api/orders/:id (admin status update)
 │   └── newsletter/
-│       └── index.ts          # POST /api/newsletter
+│       └── index.ts          # POST /api/newsletter, GET (admin)
 ├── db/
 │   ├── client.ts             # Lazy @neondatabase/serverless client (build-time safe)
 │   ├── schema.sql            # PostgreSQL schema (products, orders, order_items, newsletter_subscribers)

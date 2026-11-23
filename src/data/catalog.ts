@@ -38,6 +38,8 @@ export interface GarmentProduct {
   fitProfile: string;
   description: string;
   availableSizes: GarmentSize[];
+  stockQty?: number;
+  featuredRank?: number;
 }
 
 export interface CartEntry {
@@ -90,10 +92,7 @@ export const computeBadge = (
     : defaultLabel;
 
 export const formatEGP = (amount: number): string =>
-  `LE ${amount.toLocaleString("en-EG", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })} EGP`;
+  `LE ${Math.round(amount).toLocaleString("en-US")} EGP`;
 
 const ASSET_BASE = "/assets/products/";
 const IMAGE_BASE = "/images/";

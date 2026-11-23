@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { GarmentProduct, GarmentSize } from "../data/catalog";
+import { X } from "lucide-react";
+import { GarmentProduct, GarmentSize, formatEGP } from "../data/catalog";
 
 interface ProductModalProps {
   product: GarmentProduct | null;
@@ -15,6 +16,8 @@ export function ProductModal({
   onAddToBag,
 }: ProductModalProps) {
   const [selectedSize, setSelectedSize] = useState<GarmentSize>("M");
+  const [activeSwatch, setActiveSwatch] = useState(swatchIndex);
+  const [viewMode, setViewMode] = useState<"studio" | "look">("studio");
   const [sizeChartExpanded, setSizeChartExpanded] = useState(false);
 
   useEffect(() => {
@@ -23,8 +26,10 @@ export function ProductModal({
       ? "M"
       : product.availableSizes[0];
     setSelectedSize(defaultSize);
+    setActiveSwatch(swatchIndex);
+    setViewMode("studio");
     setSizeChartExpanded(false);
-  }, [product]);
+  }, [product, swatchIndex]);
 
   useEffect(() => {
     if (!product) return;
@@ -37,8 +42,16 @@ export function ProductModal({
 
   if (!product) return null;
 
-  const filterStyle =
-    product.swatchDetails[swatchIndex]?.filterStyle ?? "none";
+  const hasAltView = Boolean(
+    product.hoverImage && product.hoverImage !== product.image
+  );
+  const activeSrc =
+    viewMode === "look" && hasAltView ? product.hoverImage : product.image;
+  const isLookbookCutout = activeSrc.endsWith(".webp") && viewMode === "look";
+
+  const currentSwatch =
+    product.swatchDetails[activeSwatch] ?? product.swatchDetails[0];
+  const filterStyle = currentSwatch?.filterStyle ?? "none";
 
   const urgencyText =
     selectedSize === "S" || selectedSize === "M"
@@ -62,28 +75,88 @@ export function ProductModal({
           onClick={onClose}
           aria-label="Close product preview"
         >
-          ✕
+          <X size={16} aria-hidden="true" />
         </button>
 
-        <div className="pdp-gallery">
+        <div
+          className={`pdp-gallery${isLookbookCutout ? " is-lookbook" : ""}`}
+        >
           <img
-            src={product.image}
+            src={activeSrc}
             alt={product.name}
             style={{ filter: filterStyle }}
           />
+          {hasAltView ? (
+            <div className="pdp-view-toggle mono" role="group" aria-label="Product view">
+              <button
+                type="button"
+                className={`pdp-view-btn${viewMode === "studio" ? " active" : ""}`}
+                onClick={() => setViewMode("studio")}
+              >
+                Studio
+              </button>
+              <button
+                type="button"
+                className={`pdp-view-btn${viewMode === "look" ? " active" : ""}`}
+                onClick={() => setViewMode("look")}
+              >
+                Full Look
+              </button>
+            </div>
+          ) : null}
         </div>
 
         <div className="pdp-details">
-          <div className="pdp-brand-pill mono">{product.brandLabel}</div>
+          <div className="pdp-brand-pill mono">
+            {product.brandLabel} · {product.sku}
+          </div>
           <h3 id="pdpModalTitle" className="pdp-title">
             {product.name}
           </h3>
           <div className="pdp-urgency mono">{urgencyText}</div>
-          <div className="pdp-price mono">
-            LE {product.price.toLocaleString()}.00 EGP
+          <div className="pdp-price-row mono">
+            <span
+              className={`pdp-price${product.compareAt ? " is-sale" : ""}`}
+            >
+              {formatEGP(product.price)}
+            </span>
+            {product.compareAt ? (
+              <span className="pdp-compare-price">
+                LE {product.compareAt.toLocaleString("en-US")}
+              </span>
+            ) : null}
           </div>
 
           <p className="pdp-description">{product.description}</p>
+
+          {product.swatchDetails.length > 0 ? (
+            <div className="pdp-swatch-row">
+              <span className="pdp-swatch-label mono">COLORWAY:</span>
+              <div
+                className="pdp-swatch-dots"
+                role="group"
+                aria-label="Select colorway"
+              >
+                {product.swatchDetails.map((swatch, idx) => (
+                  <button
+                    key={swatch.hex}
+                    type="button"
+                    title={swatch.name}
+                    aria-label={`Colorway ${swatch.name}`}
+                    aria-pressed={idx === activeSwatch}
+                    className={`swatch-dot${
+                      idx === activeSwatch ? " active" : ""
+                    }`}
+                    style={{ background: swatch.hex }}
+                    onClick={() => setActiveSwatch(idx)}
+                  />
+                ))}
+              </div>
+              <span className="pdp-swatch-name mono">
+                {currentSwatch?.name}
+              </span>
+            </div>
+          ) : null}
 
           <dl className="pdp-spec-grid mono">
             <div>
@@ -108,8 +181,7 @@ export function ProductModal({
             <span>SELECT SIZE</span>
             <button
               type="button"
-              className="mono"
-              style={{ textDecoration: "underline" }}
+              className="pdp-size-chart-btn mono"
               onClick={() => setSizeChartExpanded((prev) => !prev)}
             >
               {sizeChartExpanded
@@ -150,14 +222,13 @@ export function ProductModal({
 
           <button
             type="button"
-            className="pill-btn solid-dark"
-            style={{ width: "100%", padding: "15px" }}
+            className="pill-btn solid-dark pdp-add-btn"
             onClick={() => {
               onAddToBag(product, selectedSize);
               onClose();
             }}
           >
-            ADD TO UNDERGROUND BAG
+            ADD TO UNDERGROUND BAG — {formatEGP(product.price)}
           </button>
 
           <div className="trust-row mono">

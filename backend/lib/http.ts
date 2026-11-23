@@ -1,3 +1,5 @@
+import { timingSafeEqual } from "node:crypto";
+
 export function corsHeaders(): Record<string, string> {
   return {
     "Access-Control-Allow-Origin": process.env.ALLOWED_ORIGIN?.trim() || "*",
@@ -35,7 +37,11 @@ export function isAuthorizedAdmin(request: Request): boolean {
   const configuredKey = process.env.ADMIN_API_KEY?.trim();
   if (!configuredKey) return false;
   const provided = request.headers.get("x-admin-key")?.trim();
-  return Boolean(provided && provided === configuredKey);
+  if (!provided) return false;
+  const a = Buffer.from(provided, "utf8");
+  const b = Buffer.from(configuredKey, "utf8");
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
 }
 
 export function mapDbProductRow(row: Record<string, unknown>) {
